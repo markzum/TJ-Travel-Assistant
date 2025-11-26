@@ -34,7 +34,7 @@ def get_events_tool(time: str, location: str, event_type: str) -> str:
 # Создание LLM с инструментами
 def create_llm():
     llm = ChatOpenAI(
-        base_url="http://llm:8000/v1",
+        base_url="http://qwen_try:8000/v1",
         api_key="fake-key",
         model="Qwen/Qwen2.5-7B-Instruct",
         temperature=0.7
