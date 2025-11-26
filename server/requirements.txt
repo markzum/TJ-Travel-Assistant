@@ -7,3 +7,6 @@ fastapi
 uvicorn
 requests
 dotenv
+python-dotenv
+geopy
+googletrans
