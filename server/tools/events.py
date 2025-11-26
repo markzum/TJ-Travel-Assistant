@@ -2,6 +2,7 @@ import requests
 import os
 import dotenv
 
+
 def get_events(city: str):
     """Получает список актуальных мероприятий в указанном городе через API TimePad.
 
@@ -37,7 +38,7 @@ def get_events(city: str):
 
 
     dotenv.load_dotenv()
-    TOKEN = os.getenv("TOKEN")
+    TOKEN = os.getenv("TIMEPAD_TOKEN")
     url = "https://api.timepad.ru/v1/events/"
     params = {
         "limit": 30,

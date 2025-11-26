@@ -7,7 +7,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, To
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from tools import get_events
+from tools import tools
 
 
 app = FastAPI()
@@ -25,12 +25,6 @@ class ChatResponse(BaseModel):
     response: str
 
 
-@tool
-def get_events_tool(time: str, location: str, event_type: str) -> str:
-    """Получить список мероприятий по заданным параметрам."""
-    return get_events(time, location, event_type)
-
-
 # Создание LLM с инструментами
 def create_llm():
     llm = ChatOpenAI(
@@ -39,7 +33,6 @@ def create_llm():
         model="Qwen/Qwen2.5-7B-Instruct",
         temperature=0.7
     )
-    tools = [get_events_tool]
     return llm.bind_tools(tools), tools
 
 
