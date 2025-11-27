@@ -38,7 +38,7 @@ class ChatResponse(BaseModel):
 # Создание LLM с инструментами
 def create_llm():
     model_name = "Qwen3-30B-A3B"
-    base_url = "http://localhost:8002/v1"
+    base_url = os.environ.get("VLLM_BASE_URL", "http://qwen_try:8000/v1"),
     temperature = 0.7
     
     logger.info(f"Creating LLM with model: {model_name}, base_url: {base_url}, temperature: {temperature}")
