@@ -30,9 +30,9 @@ class ChatResponse(BaseModel):
 # Создание LLM с инструментами
 def create_llm():
     llm = ChatOpenAI(
-        base_url=os.environ.get("VLLM_BASE_URL", "http://qwen_try:8000/v1"),
-        api_key="fake-key",
-        model="Qwen/Qwen2.5-7B-Instruct",
+        base_url=os.environ.get("LLM_BASE_URL", "http://qwen_try:8000/v1"),
+        api_key=os.environ.get("LLM_API_KEY", "fake-key"),
+        model=os.environ.get("LLM_MODEL", "google/gemini-2.0-flash-001"),
         temperature=0.7
     )
     return llm.bind_tools(tools), tools
