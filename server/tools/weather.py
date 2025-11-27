@@ -4,6 +4,7 @@ from geopy.geocoders import Nominatim
 import os
 from dotenv import load_dotenv
 
+
 load_dotenv()
 API_KEY = os.getenv('GOOGLE_API_KEY')
 
@@ -64,7 +65,8 @@ def get_fetch_weather(city_name):
     resp = requests.get(url, params=params)
     return resp.json()
 
-get_weather("Москва")
+
+# get_weather("Москва")
 
 
 

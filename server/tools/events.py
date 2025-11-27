@@ -3,6 +3,7 @@ import os
 import dotenv
 import datetime
 
+
 def get_events(city: str, date: str) -> str:
     """Получает список актуальных мероприятий в указанном городе через API TimePad.
 
