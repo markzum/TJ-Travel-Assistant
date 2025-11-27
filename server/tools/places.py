@@ -18,6 +18,8 @@ def get_places(query, min_rating=3):
     '''
     data = get_fetch_places(query)
 
+    string_places = ""
+
     for place in data.get("places", []):
         rating = place.get("rating", 0)
 
@@ -40,9 +42,9 @@ def get_places(query, min_rating=3):
         name_template = f"Название: {name}"
         address_template = f"Адрес: {address}" 
         rating_temlate = f"Рейтинг: {str(int(rating))}" 
-        reviews_template = f"Лучший отзыв: {best_review_text}" 
+        reviews_template = f"Лучший отзыв: {best_review_text}"
 
-        string_places = "\n".join([name_template, address_template, rating_temlate, reviews_template])
+        string_places += "\n".join([name_template, address_template, rating_temlate, reviews_template]) + "\n---\n"
 
     return string_places
 
