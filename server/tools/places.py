@@ -42,7 +42,7 @@ def get_places(query, min_rating=3):
         rating_temlate = f"Рейтинг: {str(int(rating))}" 
         reviews_template = f"Лучший отзыв: {best_review_text}" 
 
-        string_places = name_template + address_template + rating_temlate + reviews_template
+        string_places = "\n".join([name_template, address_template, rating_temlate, reviews_template])
 
     return string_places
 
@@ -72,7 +72,7 @@ def get_fetch_places(query):
     return response.json()
 
 
-# get_places("Кафе в Адлере")
+# print(get_places("Кафе в Адлере"))
 
 
 # Поля, которые можно добавить:

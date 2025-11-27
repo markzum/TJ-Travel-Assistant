@@ -9,6 +9,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from prompt import reasoner_system_prompt
 from tools.common import tools
+import os
 
 
 app = FastAPI()
@@ -29,7 +30,7 @@ class ChatResponse(BaseModel):
 # Создание LLM с инструментами
 def create_llm():
     llm = ChatOpenAI(
-        base_url="http://qwen_try:8000/v1",
+        base_url=os.environ.get("VLLM_BASE_URL", "http://qwen_try:8000/v1"),
         api_key="fake-key",
         model="Qwen/Qwen2.5-7B-Instruct",
         temperature=0.7

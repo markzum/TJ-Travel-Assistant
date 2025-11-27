@@ -22,7 +22,7 @@ def get_weather(city_name):
     '''
     data = get_fetch_weather(city_name)
 
-    place = data. get("timeZone", {}).get("id", "Место не найдено")
+    place = data.get("timeZone", {}).get("id", "Место не найдено")
     weather = data.get("weatherCondition", {}).get("description", {}).get("text", "Погода не найдена")
     temperature = data.get("temperature", {}).get("degrees", "Температура не найдена")
 
@@ -31,15 +31,12 @@ def get_weather(city_name):
     else:
         precipitation = "без осадков"
 
-    translated_city = translator.translate(place, src='auto', dest='ru').text.replace("/", ", ")
-    translated_precipitation = translator.translate(precipitation.replace("_", " "), src='auto', dest='ru').text
-
-    location_template = f"Местоположение {translated_city} "
+    location_template = f"Местоположение {city_name} "
     weather_template = f"Погода: {weather} "
     temperature_template = f"Температура: {str(int(temperature))} C "
-    precipitation_template = f"Осадки: {translated_precipitation.lower()} "
+    precipitation_template = f"Осадки: {precipitation.lower() if precipitation.lower() != 'none' else 'Без осадков'}"
 
-    string_weather = location_template + weather_template + temperature_template + precipitation_template
+    string_weather = "\n".join([location_template, weather_template, temperature_template, precipitation_template])
     print(string_weather)
 
     return string_weather
