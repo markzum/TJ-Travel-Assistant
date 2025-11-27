@@ -7,6 +7,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, To
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
+from prompt import reasoner_system_prompt
 from tools.common import tools
 
 
@@ -43,9 +44,7 @@ def call_model(state: MessagesState):
     # Добавить системное сообщение, если это первое сообщение
     messages = state["messages"]
     if not any(isinstance(msg, SystemMessage) for msg in messages):
-        system_message = SystemMessage(
-            content="Ты полезный ассистент, который помогает находить мероприятия и планировать досуг."
-        )
+        system_message = SystemMessage(content=reasoner_system_prompt.strip())
         messages = [system_message] + messages
     
     response = llm_with_tools.invoke(messages)
