@@ -7,7 +7,7 @@ graph = create_graph()
 config = {"configurable": {"thread_id": "asdasd"}}
     
 
-message = "Чем можно заняться в Сириусе?"
+message = "Какая дата будет завтра?"
 
 # Вызов графа с новым сообщением
 input_message = {"messages": [HumanMessage(content=message)]}

@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Annotated
@@ -7,7 +8,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, To
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from prompt import reasoner_system_prompt
+from prompt import reasoner_system_prompt, sirius_special
 from tools.common import tools
 import os
 
@@ -35,17 +36,19 @@ def create_llm():
         model=os.environ.get("LLM_MODEL", "google/gemini-2.0-flash-001"),
         temperature=0.7
     )
-    return llm.bind_tools(tools), tools
+    return llm.bind_tools(tools)
 
+
+llm_with_tools = create_llm()
 
 # Узел для вызова модели
-def call_model(state: MessagesState):
-    llm_with_tools, _ = create_llm()
-    
+def call_model(state: MessagesState):    
     # Добавить системное сообщение, если это первое сообщение
     messages = state["messages"]
     if not any(isinstance(msg, SystemMessage) for msg in messages):
-        system_message = SystemMessage(content=reasoner_system_prompt.strip())
+        prompt = reasoner_system_prompt.format(current_date=datetime.now().isoformat(), 
+                                               sirius_special=sirius_special)
+        system_message = SystemMessage(content=prompt.strip())
         messages = [system_message] + messages
     
     response = llm_with_tools.invoke(messages)
@@ -71,7 +74,6 @@ def create_graph():
     # Добавляем узлы
     workflow.add_node("agent", call_model)
     
-    _, tools = create_llm()
     tool_node = ToolNode(tools)
     workflow.add_node("tools", tool_node)
     
