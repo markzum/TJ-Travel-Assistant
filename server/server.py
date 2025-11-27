@@ -154,7 +154,7 @@ async def chat(request: ChatRequest):
     
     if not is_valid:
         # Сообщение не относится к тематике бота — не сохраняем в историю
-        return ChatResponse(response="Бот не может обработать этот запрос")
+        return ChatResponse(response="Я отвечаю только на вопросы про активности в путешествиях. Могу подсказать мероприятия по душе или кафе в Сочи.")
     
     # Конфигурация с thread_id для сохранения истории
     config = {"configurable": {"thread_id": request.thread_id}}
