@@ -8,7 +8,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, To
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
-from prompt import reasoner_system_prompt, sirius_special, filter_system_prompt
+from prompt import reasoner_system_prompt, sirius_special, filter_system_prompt, router_system_prompt, asker_system_prompt
 from tools.common import tools
 import os
 
@@ -56,6 +56,34 @@ def create_filter_llm():
 filter_llm = create_filter_llm()
 
 
+# Создание LLM для роутера (без инструментов)
+def create_router_llm():
+    llm = ChatOpenAI(
+        base_url=os.environ.get("LLM_BASE_URL", "http://qwen_try:8000/v1"),
+        api_key=os.environ.get("LLM_API_KEY", "fake-key"),
+        model=os.environ.get("LLM_MODEL", "google/gemini-2.0-flash-001"),
+        temperature=0.0  # Низкая температура для детерминированного решения
+    )
+    return llm
+
+
+router_llm = create_router_llm()
+
+
+# Создание LLM для агента-спрашивателя (без инструментов)
+def create_asker_llm():
+    llm = ChatOpenAI(
+        base_url=os.environ.get("LLM_BASE_URL", "http://qwen_try:8000/v1"),
+        api_key=os.environ.get("LLM_API_KEY", "fake-key"),
+        model=os.environ.get("LLM_MODEL", "google/gemini-2.0-flash-001"),
+        temperature=0.7  # Немного креативности для дружелюбных вопросов
+    )
+    return llm
+
+
+asker_llm = create_asker_llm()
+
+
 async def filter_message(message: str, thread_id: str) -> bool:
     """
     Проверяет, относится ли сообщение к тематике бота.
@@ -96,6 +124,86 @@ async def filter_message(message: str, thread_id: str) -> bool:
     return "YES" in answer
 
 
+# Узел роутера — определяет, достаточно ли информации для ответа
+def router_node(state: MessagesState):
+    """Оценивает запрос и решает, направить к агенту или спрашивателю."""
+    messages = state["messages"]
+    
+    # Собираем контекст диалога для роутера
+    context_messages = []
+    for msg in messages:
+        if isinstance(msg, HumanMessage):
+            context_messages.append(f"Пользователь: {msg.content}")
+        elif isinstance(msg, AIMessage) and msg.content:
+            context_messages.append(f"Ассистент: {msg.content}")
+    
+    context_str = "\n".join(context_messages) if context_messages else "Нет контекста."
+    
+    # Получаем последнее сообщение пользователя
+    last_human_msg = None
+    for msg in reversed(messages):
+        if isinstance(msg, HumanMessage):
+            last_human_msg = msg.content
+            break
+    
+    router_messages = [
+        SystemMessage(content=router_system_prompt.strip()),
+        HumanMessage(content=f"Контекст диалога:\n{context_str}\n\nПоследний запрос: {last_human_msg}")
+    ]
+    
+    response = router_llm.invoke(router_messages)
+    decision = response.content.strip().upper()
+    
+    # Сохраняем решение роутера в состоянии через специальное сообщение
+    # Используем AIMessage с метаданными
+    return {"messages": [AIMessage(content="", additional_kwargs={"router_decision": decision})]}
+
+
+# Функция для определения следующего узла после роутера
+def router_should_continue(state: MessagesState):
+    """Определяет, куда направить после роутера."""
+    messages = state["messages"]
+    last_message = messages[-1]
+    
+    # Проверяем решение роутера
+    if hasattr(last_message, "additional_kwargs"):
+        decision = last_message.additional_kwargs.get("router_decision", "AGENT")
+        if "ASKER" in decision:
+            return "asker"
+    return "agent"
+
+
+# Узел агента-спрашивателя
+def asker_node(state: MessagesState):
+    """Задаёт уточняющий вопрос пользователю."""
+    messages = state["messages"]
+    
+    # Собираем контекст диалога
+    context_messages = []
+    for msg in messages:
+        if isinstance(msg, HumanMessage):
+            context_messages.append(f"Пользователь: {msg.content}")
+        elif isinstance(msg, AIMessage) and msg.content:
+            context_messages.append(f"Ассистент: {msg.content}")
+    
+    context_str = "\n".join(context_messages) if context_messages else "Нет контекста."
+    
+    # Получаем последнее сообщение пользователя
+    last_human_msg = None
+    for msg in reversed(messages):
+        if isinstance(msg, HumanMessage):
+            last_human_msg = msg.content
+            break
+    
+    asker_messages = [
+        SystemMessage(content=asker_system_prompt.strip()),
+        HumanMessage(content=f"Контекст диалога:\n{context_str}\n\nПоследний запрос пользователя: {last_human_msg}")
+    ]
+    
+    response = asker_llm.invoke(asker_messages)
+    return {"messages": [AIMessage(content=response.content)]}
+
+
 # Узел для вызова модели
 def call_model(state: MessagesState):    
     # Добавить системное сообщение, если это первое сообщение
@@ -127,14 +235,27 @@ def create_graph():
     workflow = StateGraph(MessagesState)
     
     # Добавляем узлы
+    workflow.add_node("router", router_node)
+    workflow.add_node("asker", asker_node)
     workflow.add_node("agent", call_model)
     
     tool_node = ToolNode(tools)
     workflow.add_node("tools", tool_node)
     
     # Определяем связи
-    workflow.add_edge(START, "agent")
+    # START -> router
+    workflow.add_edge(START, "router")
+    
+    # router -> (asker | agent) — условный переход
+    workflow.add_conditional_edges("router", router_should_continue, ["asker", "agent"])
+    
+    # asker -> END (после уточняющего вопроса ждём ответа пользователя)
+    workflow.add_edge("asker", END)
+    
+    # agent -> (tools | END) — условный переход
     workflow.add_conditional_edges("agent", should_continue, ["tools", END])
+    
+    # tools -> agent
     workflow.add_edge("tools", "agent")
     
     # Компилируем граф с checkpointer
