@@ -265,6 +265,7 @@ def call_model(state: AgentState):
         messages = [system_message] + messages
     
     response = llm_with_tools.invoke(messages)
+    print(f"Response from general agent: ```{response.content}```")
     return {"messages": [response]}
 
 
