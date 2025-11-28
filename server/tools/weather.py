@@ -12,14 +12,15 @@ translator = Translator()
 
 string_weather = ""
 
-def get_weather(city_name):
-    '''
-    Возвращает ответ на запрос пользователя.
-            Параметры:
-                    city_name (str): название города
-            Возвращаемое значение:
-                    string_weather (str): ответ с местоположением города, погодой, температурой и осадками
-    '''
+def get_weather(city_name: str) -> str:
+    """Возвращает ответ на запрос пользователя.
+
+    Args:
+        city_name (str): название города
+
+    Returns:
+        str: ответ с местоположением города, погодой, температурой и осадками
+    """
     data = get_fetch_weather(city_name)
 
     place = data.get("timeZone", {}).get("id", "Место не найдено")

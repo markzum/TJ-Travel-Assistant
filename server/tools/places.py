@@ -7,15 +7,16 @@ load_dotenv()
 API_KEY = os.getenv('GOOGLE_API_KEY')
 string_places = ""
 
-def get_places(query, min_rating=3):
-    '''
-    Возвращает ответ на запрос пользователя.
-            Параметры:
-                    query (str): запрос пользователя
-                    min_rating (int): минимальный рейтинг
-            Возвращаемое значение:
-                    string_places (str): ответ с названием, адресом, рейтингом и отзывом заведения
-    '''
+def get_places(query: str, min_rating: int = 3) -> str:
+    """Возвращает ответ на запрос пользователя.
+
+    Args:
+        query (str): запрос пользователя
+        min_rating (int): минимальный рейтинг
+
+    Returns:
+        str: ответ с названием, адресом, рейтингом и отзывом заведения
+    """
     data = get_fetch_places(query)
 
     string_places = ""
