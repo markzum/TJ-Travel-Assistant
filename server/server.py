@@ -13,6 +13,12 @@ from tools.common import tools
 import os
 
 
+# Кастомное состояние с поддержкой context
+class AgentState(MessagesState):
+    """Расширенное состояние агента с контекстом пользователя."""
+    context: dict = None
+
+
 app = FastAPI()
 
 # Глобальный memory saver для хранения истории сессий
@@ -159,10 +165,10 @@ async def filter_message(message: str, thread_id: str) -> bool:
 
 
 # Узел роутера — определяет, достаточно ли информации для ответа
-def router_node(state: MessagesState):
+def router_node(state: AgentState):
     """Оценивает запрос и решает, направить к агенту или спрашивателю."""
     messages = state["messages"]
-    context = state["context"]
+    context = state.get("context")
     
     # Собираем контекст диалога для роутера
     context_messages = []
@@ -197,7 +203,7 @@ def router_node(state: MessagesState):
 
 
 # Функция для определения следующего узла после роутера
-def router_should_continue(state: MessagesState):
+def router_should_continue(state: AgentState):
     """Определяет, куда направить после роутера."""
     messages = state["messages"]
     last_message = messages[-1]
@@ -211,10 +217,10 @@ def router_should_continue(state: MessagesState):
 
 
 # Узел агента-спрашивателя
-def asker_node(state: MessagesState):
+def asker_node(state: AgentState):
     """Задаёт уточняющий вопрос пользователю."""
     messages = state["messages"]
-    context = state["context"]
+    context = state.get("context")
     
     # Собираем контекст диалога
     context_messages = []
@@ -245,10 +251,10 @@ def asker_node(state: MessagesState):
 
 
 # Узел для вызова модели
-def call_model(state: MessagesState):    
+def call_model(state: AgentState):    
     # Добавить системное сообщение, если это первое сообщение
     messages = state["messages"]
-    context = state["context"]
+    context = state.get("context")
 
     if not any(isinstance(msg, SystemMessage) for msg in messages):
         prompt = reasoner_system_prompt.format(current_date=datetime.now().isoformat(),
@@ -263,7 +269,7 @@ def call_model(state: MessagesState):
 
 
 # Функция для определения следующего узла
-def should_continue(state: MessagesState):
+def should_continue(state: AgentState):
     messages = state["messages"]
     last_message = messages[-1]
     
@@ -276,7 +282,7 @@ def should_continue(state: MessagesState):
 
 # Создание графа
 def create_graph():
-    workflow = StateGraph(MessagesState)
+    workflow = StateGraph(AgentState)
     
     # Добавляем узлы
     workflow.add_node("router", router_node)
