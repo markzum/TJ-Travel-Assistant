@@ -93,7 +93,7 @@ def create_filter_llm():
     llm = ChatOpenAI(
         base_url=os.environ.get("LLM_BASE_URL", "http://qwen_try:8000/v1"),
         api_key=os.environ.get("LLM_API_KEY", "fake-key"),
-        model=os.environ.get("LLM_MODEL", "google/gemini-2.0-flash-001"),
+        model=os.environ.get("LLM_MODEL_LITE", "google/gemini-2.0-flash-001"),
         temperature=0.0  # Низкая температура для детерминированного ответа
     )
     return llm
