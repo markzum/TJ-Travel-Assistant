@@ -29,6 +29,39 @@ class ChatResponse(BaseModel):
     response: str
 
 
+def context_format(context: dict) -> str:
+    """Красивое форматирование словаря контекста в многострочный человекочитаемый вид."""
+    if not context:
+        return "Нет контекста."
+    labels = {
+        "travelers": "Путешественники",
+        "age": "Возраст",
+        "interests": "Интересы",
+        "plan_style": "Стиль поездки",
+        "budget": "Бюджет"
+    }
+    order = ["travelers", "age", "interests", "plan_style", "budget"]
+    lines = []
+    for key in order:
+        if key not in context:
+            continue
+        val = context[key]
+        if isinstance(val, list):
+            formatted = ", ".join(str(x) for x in val) if val else "—"
+        else:
+            formatted = str(val) if val is not None and val != "" else "—"
+        lines.append(f"{labels.get(key, key.replace('_', ' ').capitalize())}: {formatted}")
+    # добавляем оставшиеся ключи, если есть нестандартные
+    for key, val in context.items():
+        if key in order:
+            continue
+        if isinstance(val, list):
+            formatted = ", ".join(str(x) for x in val) if val else "—"
+        else:
+            formatted = str(val) if val is not None and val != "" else "—"
+        lines.append(f"{labels.get(key, key.replace('_', ' ').capitalize())}: {formatted}")
+    return "\n".join(lines)
+
 # Создание LLM с инструментами
 def create_llm():
     llm = ChatOpenAI(
@@ -129,6 +162,7 @@ async def filter_message(message: str, thread_id: str) -> bool:
 def router_node(state: MessagesState):
     """Оценивает запрос и решает, направить к агенту или спрашивателю."""
     messages = state["messages"]
+    context = state["context"]
     
     # Собираем контекст диалога для роутера
     context_messages = []
@@ -147,8 +181,10 @@ def router_node(state: MessagesState):
             last_human_msg = msg.content
             break
     
+    prompt = router_system_prompt.format(context=context_format(context))
+
     router_messages = [
-        SystemMessage(content=router_system_prompt.strip()),
+        SystemMessage(content=prompt.strip()),
         HumanMessage(content=f"Контекст диалога:\n{context_str}\n\nПоследний запрос: {last_human_msg}")
     ]
     
@@ -178,6 +214,7 @@ def router_should_continue(state: MessagesState):
 def asker_node(state: MessagesState):
     """Задаёт уточняющий вопрос пользователю."""
     messages = state["messages"]
+    context = state["context"]
     
     # Собираем контекст диалога
     context_messages = []
@@ -196,8 +233,10 @@ def asker_node(state: MessagesState):
             last_human_msg = msg.content
             break
     
+    prompt = asker_system_prompt.format(context=context_format(context))
+    
     asker_messages = [
-        SystemMessage(content=asker_system_prompt.strip()),
+        SystemMessage(content=prompt.strip()),
         HumanMessage(content=f"Контекст диалога:\n{context_str}\n\nПоследний запрос пользователя: {last_human_msg}")
     ]
     
@@ -209,9 +248,13 @@ def asker_node(state: MessagesState):
 def call_model(state: MessagesState):    
     # Добавить системное сообщение, если это первое сообщение
     messages = state["messages"]
+    context = state["context"]
+
     if not any(isinstance(msg, SystemMessage) for msg in messages):
-        prompt = reasoner_system_prompt.format(current_date=datetime.now().isoformat(), 
+        prompt = reasoner_system_prompt.format(current_date=datetime.now().isoformat(),
+                                               context=context_format(context),
                                                sirius_special=sirius_special)
+        print(prompt)
         system_message = SystemMessage(content=prompt.strip())
         messages = [system_message] + messages
     
@@ -282,7 +325,8 @@ async def chat(request: ChatRequest):
     config = {"configurable": {"thread_id": request.thread_id}}
     
     # Вызов графа с новым сообщением
-    input_message = {"messages": [HumanMessage(content=request.message)]}
+    input_message = {"messages": [HumanMessage(content=request.message)],
+                     "context": request.context}
     
     result = graph.invoke(input_message, config)
     
