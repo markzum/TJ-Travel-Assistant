@@ -42,10 +42,11 @@ def get_places(query: str, min_rating: int = 3) -> str:
 
         name_template = f"Название: {name}"
         address_template = f"Адрес: {address}" 
-        rating_temlate = f"Рейтинг: {str(int(rating))}" 
+        rating_template = f"Рейтинг: {str(int(rating))}" 
         reviews_template = f"Лучший отзыв: {best_review_text}"
+        uri = f"Ссылка на карту: {place.get('googleMapsUri')}"
 
-        string_places += "\n".join([name_template, address_template, rating_temlate, reviews_template]) + "\n---\n"
+        string_places += "\n".join([name_template, address_template, rating_template, reviews_template, uri]) + "\n---\n"
 
     return string_places
 
@@ -63,7 +64,8 @@ def get_fetch_places(query):
             "places.formattedAddress,"
             "places.rating,"
             "places.reviews.text,"
-            "places.reviews.rating"
+            "places.reviews.rating,"
+            "places.googleMapsUri"
         )
     }
     payload = {"textQuery": query,
@@ -75,7 +77,8 @@ def get_fetch_places(query):
     return response.json()
 
 
-# print(get_places("Кафе в Адлере"))
+if __name__ == "__main__":
+    print(get_places("Кафе в Адлере"))
 
 
 # Поля, которые можно добавить:
