@@ -2,6 +2,7 @@ import requests
 import os
 from dotenv import load_dotenv
 
+
 load_dotenv()
 API_KEY = os.getenv('GOOGLE_API_KEY')
 string_places = ""
@@ -16,6 +17,8 @@ def get_places(query, min_rating=3):
                     string_places (str): ответ с названием, адресом, рейтингом и отзывом заведения
     '''
     data = get_fetch_places(query)
+
+    string_places = ""
 
     for place in data.get("places", []):
         rating = place.get("rating", 0)
@@ -39,9 +42,9 @@ def get_places(query, min_rating=3):
         name_template = f"Название: {name}"
         address_template = f"Адрес: {address}" 
         rating_temlate = f"Рейтинг: {str(int(rating))}" 
-        reviews_template = f"Лучший отзыв: {best_review_text}" 
+        reviews_template = f"Лучший отзыв: {best_review_text}"
 
-        string_places = name_template + address_template + rating_temlate + reviews_template
+        string_places += "\n".join([name_template, address_template, rating_temlate, reviews_template]) + "\n---\n"
 
     return string_places
 
@@ -70,9 +73,8 @@ def get_fetch_places(query):
         return "По вашему запросу ничего не найдено"
     return response.json()
 
-get_places("Кафе в Адлере")
 
-
+# print(get_places("Кафе в Адлере"))
 
 
 # Поля, которые можно добавить:
