@@ -22,6 +22,7 @@ memory = MemorySaver()
 class ChatRequest(BaseModel):
     message: str
     thread_id: str = "default"
+    context: str = None
 
 
 class ChatResponse(BaseModel):
