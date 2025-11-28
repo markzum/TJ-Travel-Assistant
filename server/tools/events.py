@@ -17,7 +17,6 @@ filtering_prompt = """
 """
 
 def get_events(city: str, date: str, criteria: str = None) -> str:
-    global filtering_prompt
     """Получает и фильтрует мероприятия через TimePad API и LLM.
 
     Выполняет запрос к TimePad API для получения мероприятий в указанном городе
@@ -39,6 +38,7 @@ def get_events(city: str, date: str, criteria: str = None) -> str:
     Raises:
         requests.exceptions.RequestException: Ошибки сети или HTTP-статусы != 200.
     """
+    global filtering_prompt
     dotenv.load_dotenv()
 
     llm = ChatOpenAI(
