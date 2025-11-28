@@ -260,7 +260,7 @@ def call_model(state: AgentState):
         prompt = reasoner_system_prompt.format(current_date=datetime.now().isoformat(),
                                                context=context_format(context),
                                                sirius_special=sirius_special)
-        print(prompt)
+        # print(prompt)
         system_message = SystemMessage(content=prompt.strip())
         messages = [system_message] + messages
     

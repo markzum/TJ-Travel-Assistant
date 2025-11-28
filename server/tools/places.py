@@ -48,6 +48,7 @@ def get_places(query: str, min_rating: int = 3) -> str:
 
         string_places += "\n".join([name_template, address_template, rating_template, reviews_template, uri]) + "\n---\n"
 
+    print(string_places)
     return string_places
 
 
